@@ -1,0 +1,1135 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8"/>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0"/>
+  <title>FIFA World Cup 2026 Tracker</title>
+  <style>
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body { background: #f5f4f0; color: #1a1a1a; font-family: 'Inter','Helvetica Neue',system-ui,sans-serif; }
+    input[type=number]::-webkit-inner-spin-button,
+    input[type=number]::-webkit-outer-spin-button { opacity: 1; }
+    ::-webkit-scrollbar { width: 6px; height: 6px; }
+    ::-webkit-scrollbar-track { background: #e8e4dc; }
+    ::-webkit-scrollbar-thumb { background: #bbb; border-radius: 3px; }
+    button, input { touch-action: manipulation; }
+    @media (max-width: 700px) {
+      body { -webkit-text-size-adjust: 100%; }
+      button { min-height: 40px; }
+      input[type=number] { min-height: 40px; font-size: 16px !important; }
+    }
+  </style>
+</head>
+<body>
+  <div id="root"></div>
+
+  <script crossorigin src="https://cdnjs.cloudflare.com/ajax/libs/react/18.2.0/umd/react.production.min.js"></script>
+  <script crossorigin src="https://cdnjs.cloudflare.com/ajax/libs/react-dom/18.2.0/umd/react-dom.production.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/babel-standalone/7.23.5/babel.min.js"></script>
+
+  <script type="text/babel" data-presets="react">
+    const { useState, useEffect, useCallback } = React;
+
+// ═══════════════════════════════════════════════════════════════
+// DATA
+// ═══════════════════════════════════════════════════════════════
+
+const GROUPS = {
+  A: ["Mexico","South Korea","South Africa","Czechia"],
+  B: ["Canada","Switzerland","Qatar","Bosnia & Herzegovina"],
+  C: ["Brazil","Morocco","Scotland","Haiti"],
+  D: ["United States","Australia","Paraguay","Türkiye"],
+  E: ["Germany","Ecuador","Ivory Coast","Curaçao"],
+  F: ["Netherlands","Japan","Tunisia","Sweden"],
+  G: ["Belgium","Iran","Egypt","New Zealand"],
+  H: ["Spain","Uruguay","Saudi Arabia","Cape Verde"],
+  I: ["France","Senegal","Iraq","Norway"],
+  J: ["Argentina","Algeria","Austria","Jordan"],
+  K: ["Portugal","Colombia","Congo DR","Uzbekistan"],
+  L: ["England","Croatia","Ghana","Panama"],
+};
+
+const FLAG = {
+  Mexico:"🇲🇽","South Korea":"🇰🇷","South Africa":"🇿🇦",Czechia:"🇨🇿",
+  Canada:"🇨🇦",Switzerland:"🇨🇭",Qatar:"🇶🇦","Bosnia & Herzegovina":"🇧🇦",
+  Brazil:"🇧🇷",Morocco:"🇲🇦",Scotland:"🏴󠁧󠁢󠁳󠁣󠁴󠁿",Haiti:"🇭🇹",
+  "United States":"🇺🇸",Australia:"🇦🇺",Paraguay:"🇵🇾","Türkiye":"🇹🇷",
+  Germany:"🇩🇪",Ecuador:"🇪🇨","Ivory Coast":"🇨🇮","Curaçao":"🇨🇼",
+  Netherlands:"🇳🇱",Japan:"🇯🇵",Tunisia:"🇹🇳",Sweden:"🇸🇪",
+  Belgium:"🇧🇪",Iran:"🇮🇷",Egypt:"🇪🇬","New Zealand":"🇳🇿",
+  Spain:"🇪🇸",Uruguay:"🇺🇾","Saudi Arabia":"🇸🇦","Cape Verde":"🇨🇻",
+  France:"🇫🇷",Senegal:"🇸🇳",Iraq:"🇮🇶",Norway:"🇳🇴",
+  Argentina:"🇦🇷",Algeria:"🇩🇿",Austria:"🇦🇹",Jordan:"🇯🇴",
+  Portugal:"🇵🇹",Colombia:"🇨🇴","Congo DR":"🇨🇩",Uzbekistan:"🇺🇿",
+  England:"🏴󠁧󠁢󠁥󠁮󠁧󠁿",Croatia:"🇭🇷",Ghana:"🇬🇭",Panama:"🇵🇦",
+};
+const f = t => FLAG[t] || "🏳";
+
+// All 72 group-stage fixtures with exact ET times and venues
+const GROUP_FIXTURES = [
+  // ── GROUP A ──
+  {id:1,group:"A",md:1,date:"Jun 11",time:"3:00 PM",home:"Mexico",away:"South Africa",venue:"Mexico City"},
+  {id:2,group:"A",md:1,date:"Jun 11",time:"10:00 PM",home:"South Korea",away:"Czechia",venue:"Guadalajara"},
+  {id:3,group:"A",md:2,date:"Jun 18",time:"12:00 PM",home:"Czechia",away:"South Africa",venue:"Atlanta"},
+  {id:4,group:"A",md:2,date:"Jun 18",time:"9:00 PM",home:"Mexico",away:"South Korea",venue:"Guadalajara"},
+  {id:5,group:"A",md:3,date:"Jun 24",time:"9:00 PM",home:"Mexico",away:"Czechia",venue:"Mexico City"},
+  {id:6,group:"A",md:3,date:"Jun 24",time:"9:00 PM",home:"South Korea",away:"South Africa",venue:"Monterrey"},
+  // ── GROUP B ──
+  {id:7,group:"B",md:1,date:"Jun 12",time:"3:00 PM",home:"Canada",away:"Bosnia & Herzegovina",venue:"Toronto"},
+  {id:8,group:"B",md:1,date:"Jun 13",time:"3:00 PM",home:"Qatar",away:"Switzerland",venue:"San Francisco"},
+  {id:9,group:"B",md:2,date:"Jun 18",time:"3:00 PM",home:"Switzerland",away:"Bosnia & Herzegovina",venue:"Los Angeles"},
+  {id:10,group:"B",md:2,date:"Jun 18",time:"6:00 PM",home:"Canada",away:"Qatar",venue:"Vancouver"},
+  {id:11,group:"B",md:3,date:"Jun 24",time:"3:00 PM",home:"Switzerland",away:"Canada",venue:"Vancouver"},
+  {id:12,group:"B",md:3,date:"Jun 24",time:"3:00 PM",home:"Bosnia & Herzegovina",away:"Qatar",venue:"Seattle"},
+  // ── GROUP C ──
+  {id:13,group:"C",md:1,date:"Jun 13",time:"6:00 PM",home:"Brazil",away:"Morocco",venue:"New York/NJ"},
+  {id:14,group:"C",md:1,date:"Jun 13",time:"9:00 PM",home:"Haiti",away:"Scotland",venue:"Boston"},
+  {id:15,group:"C",md:2,date:"Jun 19",time:"3:00 PM",home:"Scotland",away:"Morocco",venue:"Boston"},
+  {id:16,group:"C",md:2,date:"Jun 19",time:"9:00 PM",home:"Brazil",away:"Haiti",venue:"Philadelphia"},
+  {id:17,group:"C",md:3,date:"Jun 24",time:"6:00 PM",home:"Brazil",away:"Scotland",venue:"Miami"},
+  {id:18,group:"C",md:3,date:"Jun 24",time:"6:00 PM",home:"Morocco",away:"Haiti",venue:"Atlanta"},
+  // ── GROUP D ──
+  {id:19,group:"D",md:1,date:"Jun 12",time:"9:00 PM",home:"United States",away:"Paraguay",venue:"Los Angeles"},
+  {id:20,group:"D",md:1,date:"Jun 13",time:"12:00 AM",home:"Australia",away:"Türkiye",venue:"Vancouver"},
+  {id:21,group:"D",md:2,date:"Jun 19",time:"3:00 PM",home:"United States",away:"Australia",venue:"Seattle"},
+  {id:22,group:"D",md:2,date:"Jun 19",time:"12:00 AM",home:"Türkiye",away:"Paraguay",venue:"San Francisco"},
+  {id:23,group:"D",md:3,date:"Jun 25",time:"10:00 PM",home:"United States",away:"Türkiye",venue:"Los Angeles"},
+  {id:24,group:"D",md:3,date:"Jun 25",time:"10:00 PM",home:"Paraguay",away:"Australia",venue:"San Francisco"},
+  // ── GROUP E ──
+  {id:25,group:"E",md:1,date:"Jun 14",time:"1:00 PM",home:"Germany",away:"Curaçao",venue:"Houston"},
+  {id:26,group:"E",md:1,date:"Jun 14",time:"7:00 PM",home:"Ivory Coast",away:"Ecuador",venue:"Philadelphia"},
+  {id:27,group:"E",md:2,date:"Jun 20",time:"4:00 PM",home:"Germany",away:"Ivory Coast",venue:"Toronto"},
+  {id:28,group:"E",md:2,date:"Jun 20",time:"8:00 PM",home:"Ecuador",away:"Curaçao",venue:"Kansas City"},
+  {id:29,group:"E",md:3,date:"Jun 25",time:"4:00 PM",home:"Ecuador",away:"Germany",venue:"New York/NJ"},
+  {id:30,group:"E",md:3,date:"Jun 25",time:"4:00 PM",home:"Curaçao",away:"Ivory Coast",venue:"Philadelphia"},
+  // ── GROUP F ──
+  {id:31,group:"F",md:1,date:"Jun 14",time:"4:00 PM",home:"Netherlands",away:"Japan",venue:"Dallas"},
+  {id:32,group:"F",md:1,date:"Jun 14",time:"10:00 PM",home:"Tunisia",away:"Sweden",venue:"Monterrey"},
+  {id:33,group:"F",md:2,date:"Jun 20",time:"1:00 PM",home:"Netherlands",away:"Sweden",venue:"Houston"},
+  {id:34,group:"F",md:2,date:"Jun 20",time:"12:00 AM",home:"Tunisia",away:"Japan",venue:"Monterrey"},
+  {id:35,group:"F",md:3,date:"Jun 25",time:"7:00 PM",home:"Tunisia",away:"Netherlands",venue:"Kansas City"},
+  {id:36,group:"F",md:3,date:"Jun 25",time:"7:00 PM",home:"Japan",away:"Sweden",venue:"Dallas"},
+  // ── GROUP G ──
+  {id:37,group:"G",md:1,date:"Jun 15",time:"3:00 PM",home:"Belgium",away:"Egypt",venue:"Seattle"},
+  {id:38,group:"G",md:1,date:"Jun 15",time:"9:00 PM",home:"Iran",away:"New Zealand",venue:"Los Angeles"},
+  {id:39,group:"G",md:2,date:"Jun 21",time:"3:00 PM",home:"Belgium",away:"Iran",venue:"Los Angeles"},
+  {id:40,group:"G",md:2,date:"Jun 21",time:"9:00 PM",home:"New Zealand",away:"Egypt",venue:"Vancouver"},
+  {id:41,group:"G",md:3,date:"Jun 26",time:"11:00 PM",home:"Egypt",away:"Iran",venue:"Seattle"},
+  {id:42,group:"G",md:3,date:"Jun 26",time:"11:00 PM",home:"New Zealand",away:"Belgium",venue:"Vancouver"},
+  // ── GROUP H ──
+  {id:43,group:"H",md:1,date:"Jun 15",time:"12:00 PM",home:"Spain",away:"Cape Verde",venue:"Atlanta"},
+  {id:44,group:"H",md:1,date:"Jun 15",time:"6:00 PM",home:"Saudi Arabia",away:"Uruguay",venue:"Miami"},
+  {id:45,group:"H",md:2,date:"Jun 21",time:"12:00 PM",home:"Spain",away:"Saudi Arabia",venue:"Atlanta"},
+  {id:46,group:"H",md:2,date:"Jun 21",time:"6:00 PM",home:"Uruguay",away:"Cape Verde",venue:"Miami"},
+  {id:47,group:"H",md:3,date:"Jun 26",time:"8:00 PM",home:"Cape Verde",away:"Saudi Arabia",venue:"Houston"},
+  {id:48,group:"H",md:3,date:"Jun 26",time:"8:00 PM",home:"Uruguay",away:"Spain",venue:"Guadalajara"},
+  // ── GROUP I ──
+  {id:49,group:"I",md:1,date:"Jun 16",time:"3:00 PM",home:"France",away:"Senegal",venue:"New York/NJ"},
+  {id:50,group:"I",md:1,date:"Jun 16",time:"6:00 PM",home:"Iraq",away:"Norway",venue:"Boston"},
+  {id:51,group:"I",md:2,date:"Jun 22",time:"5:00 PM",home:"France",away:"Iraq",venue:"Philadelphia"},
+  {id:52,group:"I",md:2,date:"Jun 22",time:"8:00 PM",home:"Norway",away:"Senegal",venue:"New York/NJ"},
+  {id:53,group:"I",md:3,date:"Jun 26",time:"3:00 PM",home:"Norway",away:"France",venue:"Boston"},
+  {id:54,group:"I",md:3,date:"Jun 26",time:"3:00 PM",home:"Senegal",away:"Iraq",venue:"Toronto"},
+  // ── GROUP J ──
+  {id:55,group:"J",md:1,date:"Jun 16",time:"9:00 PM",home:"Argentina",away:"Algeria",venue:"Kansas City"},
+  {id:56,group:"J",md:1,date:"Jun 16",time:"12:00 AM",home:"Austria",away:"Jordan",venue:"San Francisco"},
+  {id:57,group:"J",md:2,date:"Jun 22",time:"1:00 PM",home:"Argentina",away:"Austria",venue:"Dallas"},
+  {id:58,group:"J",md:2,date:"Jun 22",time:"11:00 PM",home:"Jordan",away:"Algeria",venue:"San Francisco"},
+  {id:59,group:"J",md:3,date:"Jun 27",time:"10:00 PM",home:"Algeria",away:"Austria",venue:"Kansas City"},
+  {id:60,group:"J",md:3,date:"Jun 27",time:"10:00 PM",home:"Jordan",away:"Argentina",venue:"Dallas"},
+  // ── GROUP K ──
+  {id:61,group:"K",md:1,date:"Jun 17",time:"1:00 PM",home:"Portugal",away:"Congo DR",venue:"Houston"},
+  {id:62,group:"K",md:1,date:"Jun 17",time:"10:00 PM",home:"Uzbekistan",away:"Colombia",venue:"Mexico City"},
+  {id:63,group:"K",md:2,date:"Jun 23",time:"1:00 PM",home:"Portugal",away:"Uzbekistan",venue:"Houston"},
+  {id:64,group:"K",md:2,date:"Jun 23",time:"10:00 PM",home:"Colombia",away:"Congo DR",venue:"Guadalajara"},
+  {id:65,group:"K",md:3,date:"Jun 27",time:"7:30 PM",home:"Colombia",away:"Portugal",venue:"Miami"},
+  {id:66,group:"K",md:3,date:"Jun 27",time:"7:30 PM",home:"Congo DR",away:"Uzbekistan",venue:"Atlanta"},
+  // ── GROUP L ──
+  {id:67,group:"L",md:1,date:"Jun 17",time:"4:00 PM",home:"England",away:"Croatia",venue:"Dallas"},
+  {id:68,group:"L",md:1,date:"Jun 17",time:"7:00 PM",home:"Ghana",away:"Panama",venue:"Toronto"},
+  {id:69,group:"L",md:2,date:"Jun 23",time:"4:00 PM",home:"England",away:"Ghana",venue:"Boston"},
+  {id:70,group:"L",md:2,date:"Jun 23",time:"7:00 PM",home:"Panama",away:"Croatia",venue:"Toronto"},
+  {id:71,group:"L",md:3,date:"Jun 27",time:"5:00 PM",home:"Panama",away:"England",venue:"New York/NJ"},
+  {id:72,group:"L",md:3,date:"Jun 27",time:"5:00 PM",home:"Croatia",away:"Ghana",venue:"Philadelphia"},
+];
+
+// Round of 32 bracket (match IDs 73-88)
+// label = slot description, feedA/feedB = how teams arrive
+const R32 = [
+  {id:73,date:"Jun 28",time:"3:00 PM",venue:"Los Angeles",labelA:"2nd A",labelB:"2nd B"},
+  {id:74,date:"Jun 28",time:"4:30 PM",venue:"Boston",labelA:"1st E",labelB:"Best 3rd ABCDF"},
+  {id:75,date:"Jun 28",time:"9:00 PM",venue:"Monterrey",labelA:"1st F",labelB:"2nd C"},
+  {id:76,date:"Jun 28",time:"1:00 PM",venue:"Houston",labelA:"1st C",labelB:"2nd F"},
+  {id:77,date:"Jun 29",time:"5:00 PM",venue:"New York/NJ",labelA:"1st I",labelB:"Best 3rd CDFGH"},
+  {id:78,date:"Jun 29",time:"1:00 PM",venue:"Dallas",labelA:"2nd E",labelB:"2nd I"},
+  {id:79,date:"Jun 29",time:"9:00 PM",venue:"Mexico City",labelA:"1st A",labelB:"Best 3rd CEFHI"},
+  {id:80,date:"Jun 29",time:"3:00 PM",venue:"Atlanta",labelA:"1st L",labelB:"Best 3rd EHIJK"},
+  {id:81,date:"Jun 30",time:"8:00 PM",venue:"San Francisco",labelA:"1st D",labelB:"Best 3rd BEFIJ"},
+  {id:82,date:"Jun 30",time:"4:00 PM",venue:"Seattle",labelA:"1st G",labelB:"Best 3rd AEHIJ"},
+  {id:83,date:"Jun 30",time:"7:00 PM",venue:"Toronto",labelA:"2nd K",labelB:"2nd L"},
+  {id:84,date:"Jun 30",time:"3:00 PM",venue:"Los Angeles",labelA:"1st H",labelB:"2nd J"},
+  {id:85,date:"Jul 1",time:"11:00 PM",venue:"Vancouver",labelA:"1st B",labelB:"Best 3rd EFGIJ"},
+  {id:86,date:"Jul 1",time:"6:00 PM",venue:"Miami",labelA:"1st J",labelB:"2nd H"},
+  {id:87,date:"Jul 2",time:"TBD",venue:"Kansas City",labelA:"1st K",labelB:"Best 3rd DEIJL"},
+  {id:88,date:"Jul 2",time:"2:00 PM",venue:"Dallas",labelA:"2nd D",labelB:"2nd G"},
+];
+
+// Round of 16 (IDs 89-96)
+const R16 = [
+  {id:89,date:"Jul 4",time:"1:00 PM",venue:"Houston",labelA:"W74",labelB:"W77"},
+  {id:90,date:"Jul 4",time:"5:00 PM",venue:"Philadelphia",labelA:"W75",labelB:"W76"},
+  {id:91,date:"Jul 5",time:"4:00 PM",venue:"New York/NJ",labelA:"W78",labelB:"W79"},
+  {id:92,date:"Jul 5",time:"8:00 PM",venue:"Mexico City",labelA:"W80",labelB:"W73"},
+  {id:93,date:"Jul 6",time:"3:00 PM",venue:"Dallas",labelA:"W81",labelB:"W82"},
+  {id:94,date:"Jul 6",time:"5:00 PM",venue:"Seattle",labelA:"W83",labelB:"W84"},
+  {id:95,date:"Jul 7",time:"12:00 PM",venue:"Atlanta",labelA:"W85",labelB:"W86"},
+  {id:96,date:"Jul 7",time:"4:00 PM",venue:"Vancouver",labelA:"W87",labelB:"W88"},
+];
+
+// Quarterfinals (IDs 97-100)
+const QF = [
+  {id:97,date:"Jul 9",time:"4:00 PM",venue:"Boston",labelA:"W89",labelB:"W90"},
+  {id:98,date:"Jul 10",time:"3:00 PM",venue:"Los Angeles",labelA:"W91",labelB:"W92"},
+  {id:99,date:"Jul 11",time:"5:00 PM",venue:"Miami",labelA:"W93",labelB:"W94"},
+  {id:100,date:"Jul 11",time:"TBD",venue:"Kansas City",labelA:"W95",labelB:"W96"},
+];
+
+// Semis (IDs 101-102), 3rd place (103), Final (104)
+const SF = [
+  {id:101,date:"Jul 14",time:"3:00 PM",venue:"Dallas",labelA:"W97",labelB:"W98"},
+  {id:102,date:"Jul 15",time:"3:00 PM",venue:"Atlanta",labelA:"W99",labelB:"W100"},
+];
+const THIRD = {id:103,date:"Jul 18",time:"3:00 PM",venue:"Miami",labelA:"L101",labelB:"L102"};
+const FINAL = {id:104,date:"Jul 19",time:"3:00 PM",venue:"New York/NJ",labelA:"W101",labelB:"W102"};
+
+// ═══════════════════════════════════════════════════════════════
+// HELPERS
+// ═══════════════════════════════════════════════════════════════
+
+function computeStandings(group, scores) {
+  const teams = GROUPS[group];
+  const tbl = {};
+  teams.forEach(t => { tbl[t]={team:t,p:0,w:0,d:0,l:0,gf:0,ga:0,gd:0,pts:0}; });
+  GROUP_FIXTURES.filter(m=>m.group===group).forEach(m=>{
+    const s = scores[m.id];
+    if (!s || s.h==null) return;
+    const H=tbl[m.home], A=tbl[m.away];
+    H.p++; A.p++; H.gf+=s.h; H.ga+=s.a; H.gd+=(s.h-s.a);
+    A.gf+=s.a; A.ga+=s.h; A.gd+=(s.a-s.h);
+    if(s.h>s.a){H.w++;H.pts+=3;A.l++;}
+    else if(s.h<s.a){A.w++;A.pts+=3;H.l++;}
+    else{H.d++;H.pts++;A.d++;A.pts++;}
+  });
+  return Object.values(tbl).sort((a,b)=>b.pts-a.pts||b.gd-a.gd||b.gf-a.gf);
+}
+
+function getAllStandings(scores) {
+  const result = {};
+  "ABCDEFGHIJKL".split("").forEach(g=>{ result[g]=computeStandings(g,scores); });
+  return result;
+}
+
+// Figure out predicted bracket teams from standings
+function predictKO(scores) {
+  const st = getAllStandings(scores);
+  // Collect all 3rd place teams and their stats to rank them
+  const thirds = "ABCDEFGHIJKL".split("").map(g=>{
+    const row = st[g][2];
+    return row ? {...row, group:g} : {team:null,pts:0,gd:0,gf:0,group:g};
+  }).sort((a,b)=>b.pts-a.pts||b.gd-a.gd||b.gf-a.gf);
+  const best8 = thirds.slice(0,8).map(t=>t.team);
+
+  const w = (g,pos) => st[g]?.[pos]?.team || null;
+  return {
+    // map slot labels to predicted teams
+    "1st A":w("A",0),"2nd A":w("A",1),
+    "1st B":w("B",0),"2nd B":w("B",1),
+    "1st C":w("C",0),"2nd C":w("C",1),
+    "1st D":w("D",0),"2nd D":w("D",1),
+    "1st E":w("E",0),"2nd E":w("E",1),
+    "1st F":w("F",0),"2nd F":w("F",1),
+    "1st G":w("G",0),"2nd G":w("G",1),
+    "1st H":w("H",0),"2nd H":w("H",1),
+    "1st I":w("I",0),"2nd I":w("I",1),
+    "1st J":w("J",0),"2nd J":w("J",1),
+    "1st K":w("K",0),"2nd K":w("K",1),
+    "1st L":w("L",0),"2nd L":w("L",1),
+    "Best 3rd ABCDF": best8[0]||null,
+    "Best 3rd CDFGH": best8[1]||null,
+    "Best 3rd CEFHI": best8[2]||null,
+    "Best 3rd EHIJK": best8[3]||null,
+    "Best 3rd BEFIJ": best8[4]||null,
+    "Best 3rd AEHIJ": best8[5]||null,
+    "Best 3rd EFGIJ": best8[6]||null,
+    "Best 3rd DEIJL": best8[7]||null,
+  };
+}
+
+const STORAGE_KEY = "wc2026v2_scores";
+const KO_STORAGE_KEY = "wc2026v2_ko";
+
+// ═══════════════════════════════════════════════════════════════
+// LIVE SCORE SYNC
+// ═══════════════════════════════════════════════════════════════
+// Uses TheSportsDB's free JSON API. This page keeps manual entry as a fallback.
+// If CORS/rate limits/API names change, manual score entry still works.
+const LIVE_SCORE_API_URL = "https://www.thesportsdb.com/api/v1/json/3/eventsseason.php?id=4429&s=2026";
+const LIVE_SCORE_CACHE_KEY = "wc2026v2_last_live_sync";
+
+// Normalize names so API team names can match the names used in this file.
+const TEAM_ALIASES = {
+  "usa":"United States",
+  "united states":"United States",
+  "united states of america":"United States",
+  "south korea":"South Korea",
+  "korea republic":"South Korea",
+  "republic of korea":"South Korea",
+  "czech republic":"Czechia",
+  "czechia":"Czechia",
+  "bosnia-herzegovina":"Bosnia & Herzegovina",
+  "bosnia and herzegovina":"Bosnia & Herzegovina",
+  "bosnia & herzegovina":"Bosnia & Herzegovina",
+  "turkey":"Türkiye",
+  "türkiye":"Türkiye",
+  "ivory coast":"Ivory Coast",
+  "cote d ivoire":"Ivory Coast",
+  "côte d’ivoire":"Ivory Coast",
+  "côte d'ivoire":"Ivory Coast",
+  "curacao":"Curaçao",
+  "curaçao":"Curaçao",
+  "dr congo":"Congo DR",
+  "congo dr":"Congo DR",
+  "democratic republic of congo":"Congo DR"
+};
+
+function normalizeTeamName(name) {
+  if (!name) return "";
+  const key = String(name)
+    .toLowerCase()
+    .normalize("NFD")
+    .replace(/[\u0300-\u036f]/g, "")
+    .replace(/&/g, "and")
+    .replace(/[^a-z0-9]+/g, " ")
+    .trim();
+  return TEAM_ALIASES[key] || String(name).trim();
+}
+
+function findFixtureByTeams(home, away) {
+  const h = normalizeTeamName(home);
+  const a = normalizeTeamName(away);
+  return GROUP_FIXTURES.find(m =>
+    normalizeTeamName(m.home) === h && normalizeTeamName(m.away) === a
+  ) || GROUP_FIXTURES.find(m =>
+    // Some feeds occasionally reverse team order. Only use this as a fallback.
+    normalizeTeamName(m.home) === a && normalizeTeamName(m.away) === h
+  );
+}
+
+function formatLastSync(ts) {
+  if (!ts) return "Never synced";
+  try { return `Last synced ${new Date(ts).toLocaleString()}`; }
+  catch { return "Last sync time unavailable"; }
+}
+
+// ═══════════════════════════════════════════════════════════════
+// MICRO COMPONENTS
+// ═══════════════════════════════════════════════════════════════
+
+const C = { // color tokens — light theme
+  bg:"#f5f4f0", card:"#ffffff", border:"#ddd9d0", borderLight:"#e8e4dc",
+  text:"#1a1a1a", muted:"#888", dim:"#bbb",
+  gold:"#9a6f00", goldDim:"#f0e6c0",
+  green:"#1e6b2e", greenBright:"#1e6b2e", greenDim:"#d4edda",
+  amber:"#b45309", amberDim:"#fef3c7",
+  blue:"#1d4ed8",
+  red:"#b91c1c",
+  accent:"#1a1a1a",
+};
+
+function useIsMobile() {
+  const [isMobile, setIsMobile] = useState(() => window.innerWidth <= 700);
+  useEffect(() => {
+    const onResize = () => setIsMobile(window.innerWidth <= 700);
+    window.addEventListener("resize", onResize);
+    return () => window.removeEventListener("resize", onResize);
+  }, []);
+  return isMobile;
+}
+
+const inp = {
+  width:36, padding:"3px 4px", borderRadius:4,
+  border:`1px solid ${C.border}`, background:"#fff",
+  color:C.text, textAlign:"center", fontSize:13,
+  fontFamily:"inherit",
+};
+
+function ScoreCell({matchId, scores, onSave, compact=false}) {
+  const isMobile = useIsMobile();
+  const s = scores[matchId];
+  const done = s && s.h != null;
+  const [open, setOpen] = useState(false);
+  const [h, setH] = useState(done ? String(s.h) : "");
+  const [a, setA] = useState(done ? String(s.a) : "");
+
+  useEffect(()=>{
+    if(done){setH(String(s.h));setA(String(s.a));}
+  },[done, s?.h, s?.a]);
+
+  function save(){
+    const hv=parseInt(h), av=parseInt(a);
+    if(!isNaN(hv)&&!isNaN(av)&&hv>=0&&av>=0){ onSave(matchId,hv,av); setOpen(false); }
+  }
+  function clear(){ onSave(matchId,null,null); setH(""); setA(""); setOpen(false); }
+
+  if(!open){
+    if(done){
+      return(
+        <button onClick={()=>setOpen(true)} style={{
+          background:C.greenDim, border:`1px solid ${C.green}`,
+          color:C.greenBright, borderRadius:6, padding:isMobile?"8px 12px":"2px 8px",
+          cursor:"pointer", fontSize:isMobile?14:(compact?12:13), fontWeight:700, fontFamily:"inherit",
+          letterSpacing:"0.05em", minWidth:isMobile?58:(compact?44:52),
+        }}>{s.h}–{s.a}</button>
+      );
+    }
+    return(
+      <button onClick={()=>setOpen(true)} style={{
+        background:"transparent", border:`1px solid ${C.border}`,
+        color:C.dim, borderRadius:6, padding:isMobile?"8px 12px":"2px 8px",
+        cursor:"pointer", fontSize:isMobile?14:12, fontFamily:"inherit", minWidth:isMobile?58:(compact?44:52),
+      }}>_ – _</button>
+    );
+  }
+  return(
+    <span style={{display:"flex",gap:isMobile?6:3,alignItems:"center",flexWrap:"wrap"}}>
+      <input value={h} onChange={e=>setH(e.target.value)} style={{...inp,width:isMobile?46:36,padding:isMobile?"8px 4px":"3px 4px"}} type="number" min="0"/>
+      <span style={{color:C.muted,fontSize:12}}>–</span>
+      <input value={a} onChange={e=>setA(e.target.value)} style={{...inp,width:isMobile?46:36,padding:isMobile?"8px 4px":"3px 4px"}} type="number" min="0"/>
+      <button onClick={save} style={{background:C.green,color:"#fff",border:"none",borderRadius:4,padding:isMobile?"8px 10px":"3px 6px",cursor:"pointer",fontSize:isMobile?14:12,fontWeight:700}}>✓</button>
+      {done&&<button onClick={clear} style={{background:"#fee2e2",color:C.red,border:"none",borderRadius:4,padding:isMobile?"8px 10px":"3px 5px",cursor:"pointer",fontSize:isMobile?13:11}}>✕</button>}
+      <button onClick={()=>setOpen(false)} style={{background:C.card,color:C.muted,border:`1px solid ${C.border}`,borderRadius:4,padding:isMobile?"8px 10px":"3px 5px",cursor:"pointer",fontSize:isMobile?13:11}}>↩</button>
+    </span>
+  );
+}
+
+// ═══════════════════════════════════════════════════════════════
+// WALL CHART PANEL: one group = standings table + 6 fixtures side by side
+// ═══════════════════════════════════════════════════════════════
+
+function GroupPanel({group, standings, scores, onSave}) {
+  const isMobile = useIsMobile();
+  const fixtures = GROUP_FIXTURES.filter(m=>m.group===group);
+  const md1=fixtures.filter(m=>m.md===1);
+  const md2=fixtures.filter(m=>m.md===2);
+  const md3=fixtures.filter(m=>m.md===3);
+
+  const rowColor = (i) => i===0 ? C.greenDim : i===1 ? C.greenDim : i===2 ? C.amberDim : "transparent";
+  const posColor = (i) => i<2 ? C.greenBright : i===2 ? C.amber : C.muted;
+
+  return(
+    <div style={{background:C.card, border:`1px solid ${C.border}`, borderRadius:8, overflow:"hidden"}}>
+      {/* Header */}
+      <div style={{background:C.card, padding:isMobile?"10px 12px":"7px 12px", display:"flex", alignItems:isMobile?"flex-start":"baseline", gap:8, borderBottom:`1px solid ${C.border}`, flexDirection:isMobile?"column":"row"}}>
+        <span style={{fontSize:13,fontWeight:800,color:C.gold,letterSpacing:"0.1em"}}>GROUP {group}</span>
+        <span style={{fontSize:11,color:C.muted}}>{GROUPS[group].map(t=>`${f(t)} ${t}`).join("  ·  ")}</span>
+      </div>
+
+      <div style={{display:"grid", gridTemplateColumns:isMobile?"1fr":"1fr 1fr", gap:0}}>
+        {/* LEFT: standings table */}
+        <div style={{borderRight:isMobile?"none":`1px solid ${C.border}`, borderBottom:isMobile?`1px solid ${C.border}`:"none", padding:"10px 0", overflowX:"auto"}}>
+          <table style={{width:"100%", borderCollapse:"collapse", fontSize:12}}>
+            <thead>
+              <tr style={{color:C.muted}}>
+                {["","Team","P","W","D","L","GD","Pts"].map((h,i)=>(
+                  <th key={i} style={{padding:"2px 6px 4px", textAlign:i>=2?"center":"left", fontWeight:600, fontSize:10}}>{h}</th>
+                ))}
+              </tr>
+            </thead>
+            <tbody>
+              {standings.map((row,i)=>(
+                <tr key={row.team} style={{background:rowColor(i), borderTop:`1px solid ${C.border}`}}>
+                  <td style={{padding:"4px 6px",textAlign:"center",color:posColor(i),fontWeight:800,fontSize:10}}>{i+1}</td>
+                  <td style={{padding:"4px 4px",whiteSpace:"nowrap"}}>
+                    <span>{f(row.team)}</span>
+                    <span style={{marginLeft:4,color:C.text,fontWeight:600,fontSize:11}}>{row.team}</span>
+                  </td>
+                  {[row.p,row.w,row.d,row.l,row.gd].map((v,j)=>(
+                    <td key={j} style={{padding:"4px 6px",textAlign:"center",color:C.muted,fontSize:11}}>{v>=0?v:""}</td>
+                  ))}
+                  <td style={{padding:"4px 8px 4px 6px",textAlign:"center",fontWeight:800,fontSize:12,color:i<2?C.text:C.muted}}>{row.pts}</td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+          <div style={{padding:"6px 10px 2px",fontSize:10,color:C.muted,lineHeight:1.6}}>
+            <span style={{color:C.greenBright}}>■</span> Advance &nbsp;<span style={{color:C.amber}}>■</span> Possible 3rd
+          </div>
+        </div>
+
+        {/* RIGHT: fixtures by matchday */}
+        <div style={{padding:"8px 10px", display:"flex", flexDirection:"column", gap:6}}>
+          {[md1,md2,md3].map((mds,mi)=>(
+            <div key={mi}>
+              <div style={{fontSize:10,fontWeight:700,color:C.muted,marginBottom:3,letterSpacing:"0.08em"}}>
+                MD{mi+1} — {mds[0]?.date}
+              </div>
+              {mds.map(m=>{
+                const s=scores[m.id];
+                const done=s&&s.h!=null;
+                return(
+                  <div key={m.id} style={{
+                    display:"flex", alignItems:"center", gap:4,
+                    padding:isMobile?"8px 0":"3px 0", borderBottom:`1px solid ${C.border}`,
+                    flexWrap:"wrap",
+                  }}>
+                    <span style={{fontSize:10,color:C.muted,minWidth:52,flexShrink:0}}>{m.time}</span>
+                    <span style={{fontSize:13}}>{f(m.home)}</span>
+                    <span style={{fontSize:11,color:done?C.text:C.muted,fontWeight:done?600:400,flex:1,minWidth:60}}>{m.home}</span>
+                    <ScoreCell matchId={m.id} scores={scores} onSave={onSave} compact />
+                    <span style={{fontSize:11,color:done?C.text:C.muted,fontWeight:done?600:400,flex:1,minWidth:60,textAlign:"right"}}>{m.away}</span>
+                    <span style={{fontSize:13}}>{f(m.away)}</span>
+                  </div>
+                );
+              })}
+            </div>
+          ))}
+          <div style={{fontSize:10,color:C.muted,marginTop:2}}>📍 {GROUP_FIXTURES.filter(m=>m.group===group).map(m=>m.venue).filter((v,i,a)=>a.indexOf(v)===i).join(", ")}</div>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+// ═══════════════════════════════════════════════════════════════
+// BRACKET VIEW
+// ═══════════════════════════════════════════════════════════════
+
+function BracketSlot({match, scores, onSave, ko, slotLabel, isKO=false}) {
+  // For knockout, scores key is `ko_${id}`
+  const key = isKO ? `ko_${match.id}` : match.id;
+  const teamA = ko[match.labelA] || match.labelA;
+  const teamB = ko[match.labelB] || match.labelB;
+  const s = scores[key];
+  const done = s && s.h != null;
+
+  function saveKO(id, h, a) { onSave(`ko_${match.id}`, h, a); }
+
+  const isReal = t => t && FLAG[t];
+
+  return(
+    <div style={{
+      background:C.card, border:`1px solid ${done?C.green:C.border}`,
+      borderRadius:6, padding:"6px 8px", fontSize:11,
+    }}>
+      <div style={{color:C.muted,fontSize:10,marginBottom:4}}>{match.date} {match.time} · {match.venue}</div>
+      <div style={{display:"flex",alignItems:"center",gap:4,justifyContent:"space-between",flexWrap:"wrap"}}>
+        <div style={{display:"flex",alignItems:"center",gap:4,flex:1}}>
+          <span style={{fontSize:14}}>{isReal(teamA)?f(teamA):"❓"}</span>
+          <span style={{color:isReal(teamA)?C.text:C.muted,fontWeight:isReal(teamA)?600:400}}>{teamA}</span>
+        </div>
+        {/* score entry inline */}
+        <ScoreCell matchId={key} scores={scores} onSave={(id,h,a)=>onSave(id,h,a)} compact/>
+        <div style={{display:"flex",alignItems:"center",gap:4,flex:1,justifyContent:"flex-end"}}>
+          <span style={{color:isReal(teamB)?C.text:C.muted,fontWeight:isReal(teamB)?600:400}}>{teamB}</span>
+          <span style={{fontSize:14}}>{isReal(teamB)?f(teamB):"❓"}</span>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+function BracketView({scores, onSave, ko}) {
+  const section = (title, color, matches, note) => (
+    <div style={{marginBottom:20}}>
+      <div style={{
+        fontSize:11,fontWeight:800,letterSpacing:"0.12em",
+        color:color, padding:"4px 10px",
+        borderLeft:`3px solid ${color}`,
+        marginBottom:8, background:C.card,
+      }}>{title}{note&&<span style={{fontWeight:400,fontSize:10,color:C.muted,marginLeft:8}}>{note}</span>}</div>
+      <div style={{display:"grid",gridTemplateColumns:"repeat(auto-fill,minmax(310px,1fr))",gap:6}}>
+        {matches.map(m=>(
+          <BracketSlot key={m.id} match={m} scores={scores} onSave={onSave} ko={ko} isKO />
+        ))}
+      </div>
+    </div>
+  );
+
+  return(
+    <div>
+      {section("ROUND OF 32","#6366f1",R32,"Jun 28 – Jul 3 · Win or go home")}
+      {section("ROUND OF 16","#3b82f6",R16,"Jul 4 – Jul 7")}
+      {section("QUARTERFINALS","#f59e0b",QF,"Jul 9 – Jul 11")}
+      {section("SEMIFINALS","#f97316",SF,"Jul 14 – Jul 15")}
+      <div style={{display:"grid",gridTemplateColumns:useIsMobile()?"1fr":"1fr 1fr",gap:8}}>
+        <div>
+          <div style={{fontSize:11,fontWeight:800,color:C.muted,letterSpacing:"0.12em",marginBottom:6,padding:"4px 10px",background:C.card,borderLeft:`3px solid ${C.muted}`}}>3RD PLACE · {THIRD.date} · {THIRD.venue}</div>
+          <BracketSlot match={THIRD} scores={scores} onSave={onSave} ko={ko} isKO/>
+        </div>
+        <div>
+          <div style={{fontSize:11,fontWeight:800,color:C.gold,letterSpacing:"0.12em",marginBottom:6,padding:"4px 10px",background:C.card,borderLeft:`3px solid ${C.gold}`}}>🏆 FINAL · {FINAL.date} · {FINAL.venue}</div>
+          <BracketSlot match={FINAL} scores={scores} onSave={onSave} ko={ko} isKO/>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+// ═══════════════════════════════════════════════════════════════
+// FULL STANDINGS TABLE (all groups at once for overview)
+// ═══════════════════════════════════════════════════════════════
+
+function AllStandings({scores}) {
+  return(
+    <div style={{display:"grid",gridTemplateColumns:"repeat(auto-fill,minmax(320px,1fr))",gap:10}}>
+      {"ABCDEFGHIJKL".split("").map(g=>{
+        const st = computeStandings(g,scores);
+        return(
+          <div key={g} style={{background:C.card,border:`1px solid ${C.border}`,borderRadius:8,overflow:"hidden"}}>
+            <div style={{background:C.card,padding:"6px 12px",borderBottom:`1px solid ${C.border}`}}>
+              <span style={{fontWeight:800,color:C.gold,fontSize:12,letterSpacing:"0.1em"}}>GROUP {g}</span>
+            </div>
+            <table style={{width:"100%",borderCollapse:"collapse",fontSize:12}}>
+              <thead>
+                <tr style={{color:C.muted,fontSize:10}}>
+                  {["","Team","P","W","D","L","GF","GA","GD","Pts"].map((h,i)=>(
+                    <th key={i} style={{padding:"3px 6px",textAlign:i>=2?"center":"left",fontWeight:600}}>{h}</th>
+                  ))}
+                </tr>
+              </thead>
+              <tbody>
+                {st.map((row,i)=>(
+                  <tr key={row.team} style={{background:i<2?C.greenDim:i===2?C.amberDim:"transparent",borderTop:`1px solid ${C.border}`}}>
+                    <td style={{padding:"4px 6px",color:i<2?C.greenBright:i===2?C.amber:C.muted,fontWeight:800,fontSize:10}}>{i+1}</td>
+                    <td style={{padding:"4px 4px",whiteSpace:"nowrap"}}>
+                      <span style={{marginRight:4}}>{f(row.team)}</span>
+                      <span style={{color:C.text,fontWeight:600,fontSize:11}}>{row.team}</span>
+                    </td>
+                    {[row.p,row.w,row.d,row.l,row.gf,row.ga,row.gd].map((v,j)=>(
+                      <td key={j} style={{padding:"4px 6px",textAlign:"center",color:C.muted,fontSize:11}}>{v}</td>
+                    ))}
+                    <td style={{padding:"4px 8px",textAlign:"center",fontWeight:800,fontSize:12,color:i<2?C.text:C.muted}}>{row.pts}</td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+        );
+      })}
+    </div>
+  );
+}
+
+// ═══════════════════════════════════════════════════════════════
+// SCHEDULE LIST VIEW (all fixtures by date)
+// ═══════════════════════════════════════════════════════════════
+
+// Parse "3:00 PM" / "12:00 AM" into minutes-since-midnight for sorting.
+// 12:00 AM is treated as 24*60 so late-night games sort after evening ones.
+function parseTime(t) {
+  const [hhmm, ampm] = t.split(" ");
+  let [h, m] = hhmm.split(":").map(Number);
+  if (ampm === "PM" && h !== 12) h += 12;
+  if (ampm === "AM" && h === 12) h = 24;
+  return h * 60 + m;
+}
+
+// Canonical date order so sorting works correctly (Jun 11 … Jun 27)
+const DATE_ORDER = [
+  "Jun 11","Jun 12","Jun 13","Jun 14","Jun 15","Jun 16","Jun 17",
+  "Jun 18","Jun 19","Jun 20","Jun 21","Jun 22","Jun 23","Jun 24",
+  "Jun 25","Jun 26","Jun 27",
+];
+
+// All group fixtures sorted strictly by date then time
+const FIXTURES_SORTED = [...GROUP_FIXTURES].sort((a,b)=>{
+  const di = DATE_ORDER.indexOf(a.date) - DATE_ORDER.indexOf(b.date);
+  return di !== 0 ? di : parseTime(a.time) - parseTime(b.time);
+});
+
+// Build ordered byDate map from the sorted list
+function buildByDate() {
+  const map = {};
+  FIXTURES_SORTED.forEach(m => {
+    if (!map[m.date]) map[m.date] = [];
+    map[m.date].push(m);
+  });
+  return map;
+}
+
+// ── Shared match row ──────────────────────────────────────────
+function MatchRow({m, scores, onSave, showDate=false}) {
+  const isMobile = useIsMobile();
+  const s = scores[m.id];
+  const done = s && s.h != null;
+
+  if (isMobile) {
+    return (
+      <div style={{
+        background:C.card, border:`1px solid ${done?C.green:C.border}`,
+        borderRadius:8, padding:"10px 12px", display:"flex", flexDirection:"column", gap:8,
+      }}>
+        <div style={{display:"flex",alignItems:"center",justifyContent:"space-between",gap:8}}>
+          <span style={{fontSize:11,color:C.muted}}>{showDate ? `${m.date} · ` : ""}{m.time} ET</span>
+          <span style={{fontSize:10,fontWeight:700,color:C.gold,background:C.goldDim,borderRadius:999,padding:"3px 8px"}}>Group {m.group}</span>
+        </div>
+        <div style={{display:"grid",gridTemplateColumns:"1fr auto 1fr",alignItems:"center",gap:8}}>
+          <div style={{display:"flex",alignItems:"center",gap:6,minWidth:0}}>
+            <span style={{fontSize:18}}>{f(m.home)}</span>
+            <span style={{fontSize:14,color:C.text,fontWeight:700,overflow:"hidden",textOverflow:"ellipsis"}}>{m.home}</span>
+          </div>
+          <ScoreCell matchId={m.id} scores={scores} onSave={onSave} compact/>
+          <div style={{display:"flex",alignItems:"center",gap:6,justifyContent:"flex-end",minWidth:0}}>
+            <span style={{fontSize:14,color:C.text,fontWeight:700,textAlign:"right",overflow:"hidden",textOverflow:"ellipsis"}}>{m.away}</span>
+            <span style={{fontSize:18}}>{f(m.away)}</span>
+          </div>
+        </div>
+        <div style={{fontSize:11,color:C.muted}}>📍 {m.venue}</div>
+      </div>
+    );
+  }
+
+  return (
+    <div style={{
+      background:C.card, border:`1px solid ${done?C.green:C.border}`,
+      borderRadius:6, padding:"7px 10px",
+      display:"flex", alignItems:"center", gap:6,
+    }}>
+      {showDate && <span style={{fontSize:10,color:C.muted,minWidth:42,flexShrink:0}}>{m.date}</span>}
+      <span style={{fontSize:10,color:C.muted,minWidth:58,flexShrink:0}}>{m.time} ET</span>
+      <span style={{
+        fontSize:10,fontWeight:700,color:C.gold,
+        background:C.goldDim,borderRadius:3,
+        padding:"1px 5px",minWidth:14,textAlign:"center",flexShrink:0,
+      }}>G{m.group}</span>
+      <span style={{fontSize:13,flexShrink:0}}>{f(m.home)}</span>
+      <span style={{fontSize:11,color:C.text,fontWeight:600,flex:1,textAlign:"right"}}>{m.home}</span>
+      <ScoreCell matchId={m.id} scores={scores} onSave={onSave} compact/>
+      <span style={{fontSize:11,color:C.text,fontWeight:600,flex:1}}>{m.away}</span>
+      <span style={{fontSize:13,flexShrink:0}}>{f(m.away)}</span>
+      <span style={{fontSize:10,color:C.muted,textAlign:"right",minWidth:60,flexShrink:0}}>📍{m.venue}</span>
+    </div>
+  );
+}
+
+// ── Schedule: all matches in strict chronological order ───────
+function ScheduleList({scores, onSave}) {
+  const byDate = buildByDate();
+  return (
+    <div>
+      {DATE_ORDER.filter(d => byDate[d]).map(date => (
+        <div key={date} style={{marginBottom:16}}>
+          <div style={{
+            fontSize:11,fontWeight:800,letterSpacing:"0.1em",
+            color:C.gold, padding:"4px 10px",
+            borderLeft:`3px solid ${C.gold}`,
+            background:C.card, marginBottom:6,
+          }}>{date.toUpperCase()}</div>
+          <div style={{display:"grid",gridTemplateColumns:useIsMobile()?"1fr":"repeat(auto-fill,minmax(360px,1fr))",gap:useIsMobile()?8:5}}>
+            {byDate[date].map(m => <MatchRow key={m.id} m={m} scores={scores} onSave={onSave}/>)}
+          </div>
+        </div>
+      ))}
+    </div>
+  );
+}
+
+// ── Calendar: mini month grid + day detail ────────────────────
+// Calendar weeks are displayed Monday → Sunday.
+// JavaScript Date.getDay() returns Sunday=0, Monday=1, etc., so convert it to Monday=0.
+function mondayFirstOffset(year, monthIndex) {
+  return (new Date(year, monthIndex, 1).getDay() + 6) % 7;
+}
+
+function getTodayTournamentLabel() {
+  const now = new Date();
+  if (now.getFullYear() !== 2026) return "Jun 11";
+  const month = now.toLocaleString("en-US", { month: "short" });
+  if (month !== "Jun" && month !== "Jul") return "Jun 11";
+  return `${month} ${now.getDate()}`;
+}
+
+function CalendarTab({scores, onSave}) {
+  const byDate = buildByDate();
+  const matchDates = new Set(Object.keys(byDate));
+  const todayLabel = getTodayTournamentLabel();
+  const [selectedDate, setSelectedDate] = useState(matchDates.has(todayLabel) ? todayLabel : "Jun 11");
+
+  // Build calendar grids for June and July (up to Jul 19)
+  function MonthGrid({monthName, year, numDays, monthIndex, prefix}) {
+    const firstDow = mondayFirstOffset(year, monthIndex);
+    const cells = [];
+    for (let i = 0; i < firstDow; i++) cells.push(null);
+    for (let d = 1; d <= numDays; d++) cells.push(d);
+
+    return (
+      <div style={{flex:1, minWidth:useIsMobile()?"100%":260}}>
+        <div style={{
+          textAlign:"center", fontWeight:800, fontSize:12,
+          color:C.gold, letterSpacing:"0.1em",
+          marginBottom:8, padding:"4px 0",
+        }}>{monthName.toUpperCase()} {year}</div>
+        <div style={{display:"grid", gridTemplateColumns:"repeat(7,1fr)", gap:2, marginBottom:6}}>
+          {["Mo","Tu","We","Th","Fr","Sa","Su"].map(d=>(
+            <div key={d} style={{textAlign:"center",fontSize:10,color:C.muted,fontWeight:700,padding:"2px 0"}}>{d}</div>
+          ))}
+          {cells.map((day,i) => {
+            if (!day) return <div key={`e${i}`}/>;
+            const label = `${prefix} ${day}`;
+            const hasMatches = matchDates.has(label);
+            const played = hasMatches && byDate[label].every(m=>scores[m.id]?.h!=null);
+            const partial = hasMatches && !played && byDate[label].some(m=>scores[m.id]?.h!=null);
+            const isSelected = selectedDate === label;
+            const isToday = label === todayLabel;
+            const bg = isSelected ? C.gold
+              : played ? C.greenDim
+              : partial ? C.amberDim
+              : hasMatches ? C.goldDim
+              : "transparent";
+            const col = isSelected ? "#000"
+              : played ? C.greenBright
+              : hasMatches ? C.gold
+              : C.dim;
+            return (
+              <div key={day} onClick={() => hasMatches && setSelectedDate(label)}
+                style={{
+                  textAlign:"center", padding:"5px 2px",
+                  borderRadius:5, fontSize:12, fontWeight:hasMatches?700:400,
+                  background:bg, color:col,
+                  cursor:hasMatches?"pointer":"default",
+                  border:`1px solid ${isSelected?C.gold:hasMatches?C.goldDim:"transparent"}`,
+                  position:"relative",
+                  outline: isToday ? `1px solid ${C.muted}` : "none",
+                  transition:"background 0.1s",
+                }}>
+                {day}
+                {hasMatches && (
+                  <div style={{
+                    position:"absolute", bottom:1, left:"50%", transform:"translateX(-50%)",
+                    width:4, height:4, borderRadius:"50%",
+                    background: isSelected?"#000":played?C.greenBright:C.gold,
+                  }}/>
+                )}
+              </div>
+            );
+          })}
+        </div>
+      </div>
+    );
+  }
+
+  const dayMatches = byDate[selectedDate] || [];
+  const totalOnDay = dayMatches.length;
+  const playedOnDay = dayMatches.filter(m=>scores[m.id]?.h!=null).length;
+
+  return (
+    <div>
+      {/* Calendar grids */}
+      <div style={{
+        background:C.card, border:`1px solid ${C.border}`,
+        borderRadius:8, padding:"14px 16px", marginBottom:16,
+      }}>
+        <div style={{display:"flex", gap:24, flexWrap:"wrap"}}>
+          <MonthGrid monthName="June" year={2026} numDays={30} monthIndex={5} prefix="Jun"/>
+          <div style={{width:1, background:C.border, flexShrink:0}}/>
+          <MonthGrid monthName="July" year={2026} numDays={19} monthIndex={6} prefix="Jul"/>
+        </div>
+        <div style={{marginTop:10,display:"flex",gap:16,flexWrap:"wrap",fontSize:10,color:C.muted}}>
+          <span><span style={{color:C.gold}}>●</span> Match day</span>
+          <span><span style={{color:C.greenBright}}>●</span> All scores entered</span>
+          <span><span style={{color:C.amber}}>●</span> Partially scored</span>
+          <span style={{color:C.dim}}>Click a highlighted date to see its fixtures</span>
+        </div>
+      </div>
+
+      {/* Selected day fixtures */}
+      <div>
+        <div style={{
+          fontSize:13, fontWeight:800, letterSpacing:"0.08em",
+          color:C.gold, padding:"6px 12px",
+          borderLeft:`3px solid ${C.gold}`,
+          background:C.card, marginBottom:10,
+          display:"flex", alignItems:"center", justifyContent:"space-between",
+        }}>
+          <span>{selectedDate.toUpperCase()} — {totalOnDay} MATCH{totalOnDay!==1?"ES":""}</span>
+          {totalOnDay>0 && (
+            <span style={{fontSize:10,fontWeight:400,color:C.muted}}>
+              {playedOnDay}/{totalOnDay} scored
+            </span>
+          )}
+        </div>
+        {dayMatches.length > 0 ? (
+          <div style={{display:"flex",flexDirection:"column",gap:6}}>
+            {dayMatches.map(m=><MatchRow key={m.id} m={m} scores={scores} onSave={onSave}/>)}
+          </div>
+        ) : (
+          <div style={{
+            background:C.card, border:`1px solid ${C.border}`,
+            borderRadius:6, padding:"24px", textAlign:"center",
+            color:C.muted, fontSize:12,
+          }}>
+            No group stage matches on this date. Select a highlighted date above.
+          </div>
+        )}
+      </div>
+    </div>
+  );
+}
+
+// ═══════════════════════════════════════════════════════════════
+// MAIN APP
+// ═══════════════════════════════════════════════════════════════
+
+function App() {
+  const isMobile = useIsMobile();
+  const [scores, setScores] = useState(()=>{
+    try{ const s=localStorage.getItem(STORAGE_KEY); return s?JSON.parse(s):{}; }catch{return {};}
+  });
+  const [koScores, setKoScores] = useState(()=>{
+    try{ const s=localStorage.getItem(KO_STORAGE_KEY); return s?JSON.parse(s):{}; }catch{return {};}
+  });
+  const [tab, setTab] = useState("wallchart");
+  const [groupFilter, setGroupFilter] = useState("ALL");
+  const [liveSync, setLiveSync] = useState({
+    loading:false,
+    message:formatLastSync(localStorage.getItem(LIVE_SCORE_CACHE_KEY)),
+    error:false,
+    auto:true
+  });
+
+  async function syncLiveScores({silent=false} = {}) {
+    if (!silent) setLiveSync(prev => ({...prev, loading:true, error:false, message:"Checking for final scores…"}));
+    try {
+      const res = await fetch(`${LIVE_SCORE_API_URL}&_=${Date.now()}`, {cache:"no-store"});
+      if (!res.ok) throw new Error(`API returned ${res.status}`);
+      const data = await res.json();
+      const events = Array.isArray(data?.events) ? data.events : [];
+      const updates = {};
+      let matched = 0;
+      let reversed = 0;
+
+      events.forEach(event => {
+        const rawHome = event.strHomeTeam;
+        const rawAway = event.strAwayTeam;
+        const hs = event.intHomeScore;
+        const as = event.intAwayScore;
+        if (hs == null || as == null || hs === "" || as === "") return;
+
+        const match = findFixtureByTeams(rawHome, rawAway);
+        if (!match) return;
+
+        const apiHome = normalizeTeamName(rawHome);
+        const fileHome = normalizeTeamName(match.home);
+        const isReversed = apiHome !== fileHome;
+        updates[match.id] = isReversed
+          ? {h:Number(as), a:Number(hs), source:"live"}
+          : {h:Number(hs), a:Number(as), source:"live"};
+        matched++;
+        if (isReversed) reversed++;
+      });
+
+      if (matched > 0) setScores(prev => ({...prev, ...updates}));
+
+      const ts = new Date().toISOString();
+      localStorage.setItem(LIVE_SCORE_CACHE_KEY, ts);
+      const msg = matched > 0
+        ? `Synced ${matched} final score${matched===1?"":"s"}${reversed ? ` (${reversed} reversed-team match${reversed===1?"":"es"} corrected)` : ""}. ${formatLastSync(ts)}`
+        : `No completed scores found yet. ${formatLastSync(ts)}`;
+      setLiveSync(prev => ({...prev, loading:false, error:false, message:msg}));
+    } catch (err) {
+      setLiveSync(prev => ({
+        ...prev,
+        loading:false,
+        error:true,
+        message:`Live sync failed: ${err.message}. You can still enter scores manually.`
+      }));
+    }
+  }
+
+  useEffect(()=>{
+    try{ localStorage.setItem(STORAGE_KEY, JSON.stringify(scores)); }catch{}
+  },[scores]);
+  useEffect(()=>{
+    try{ localStorage.setItem(KO_STORAGE_KEY, JSON.stringify(koScores)); }catch{}
+  },[koScores]);
+
+  // Optional lightweight polling while the page is open.
+  useEffect(()=>{
+    if (!liveSync.auto) return;
+    syncLiveScores({silent:true});
+    const id = setInterval(() => syncLiveScores({silent:true}), 5 * 60 * 1000);
+    return () => clearInterval(id);
+  },[liveSync.auto]);
+
+  const saveGroupScore = useCallback((id,h,a) => {
+    setScores(prev => a==null ? (()=>{const n={...prev}; delete n[id]; return n;})() : {...prev,[id]:{h,a}});
+  },[]);
+
+  const saveKoScore = useCallback((id,h,a) => {
+    setKoScores(prev => a==null ? (()=>{const n={...prev}; delete n[id]; return n;})() : {...prev,[id]:{h,a}});
+  },[]);
+
+  // Merge all scores for display
+  const allScores = {...scores, ...koScores};
+
+  const ko = predictKO(scores);
+  const allSt = getAllStandings(scores);
+
+  // Stats
+  const played = GROUP_FIXTURES.filter(m=>scores[m.id]?.h!=null).length;
+  const goals = GROUP_FIXTURES.reduce((s,m)=>{
+    const sc=scores[m.id]; return sc&&sc.h!=null ? s+sc.h+sc.a : s;
+  },0);
+
+  const tabBtn = (key,label) => (
+    <button onClick={()=>setTab(key)} style={{
+      padding:"8px 16px", border:"none",
+      background:tab===key?"#9a6f00":"transparent",
+      color:tab===key?"#fff":C.muted,
+      fontWeight:tab===key?800:500, cursor:"pointer",
+      fontSize:12, letterSpacing:"0.06em", textTransform:"uppercase",
+      fontFamily:"inherit",
+      borderBottom:tab===key?"none":`2px solid transparent`,
+      transition:"all 0.15s",
+    }}>{label}</button>
+  );
+
+  const groups = "ABCDEFGHIJKL".split("");
+  const filteredGroups = groupFilter==="ALL" ? groups : [groupFilter];
+
+  return(
+    <div style={{minHeight:"100vh", background:C.bg, color:C.text, fontFamily:"'Inter','Helvetica Neue',system-ui,sans-serif"}}>
+
+      {/* MASTHEAD */}
+      <div style={{background:C.card, borderBottom:`2px solid ${C.gold}`, padding:isMobile?"14px 12px":"14px 20px"}}>
+        <div style={{maxWidth:1300, margin:"0 auto", display:"flex", alignItems:isMobile?"stretch":"center", justifyContent:"space-between", flexWrap:"wrap", gap:isMobile?14:10, flexDirection:isMobile?"column":"row"}}>
+          <div>
+            <div style={{
+              fontSize:isMobile?20:22, fontWeight:900, letterSpacing:"0.04em",
+              color:C.gold, lineHeight:1,
+            }}>FIFA WORLD CUP 2026</div>
+            <div style={{fontSize:11,color:C.muted,marginTop:3,letterSpacing:"0.06em"}}>
+              USA · CANADA · MEXICO &nbsp;·&nbsp; 11 JUNE – 19 JULY &nbsp;·&nbsp; 48 TEAMS · 104 MATCHES
+            </div>
+          </div>
+          <div style={{display:"flex",gap:isMobile?12:16,alignItems:"center",flexWrap:"wrap",justifyContent:isMobile?"space-between":"flex-end"}}>
+            {[
+              [`${played}/72`, "Played"],
+              [`${goals}`, "Goals"],
+              [played>0?(goals/played).toFixed(2):"—","per game"],
+            ].map(([v,l])=>(
+              <div key={l} style={{textAlign:"center"}}>
+                <div style={{fontSize:18,fontWeight:900,color:C.gold}}>{v}</div>
+                <div style={{fontSize:10,color:C.muted,letterSpacing:"0.06em"}}>{l.toUpperCase()}</div>
+              </div>
+            ))}
+            <div style={{display:"flex",flexDirection:"column",gap:6,alignItems:isMobile?"stretch":"flex-end",minWidth:isMobile?"100%":210}}>
+              <button onClick={()=>syncLiveScores()} disabled={liveSync.loading} style={{
+                background:liveSync.loading?C.border:C.gold,
+                color:liveSync.loading?C.muted:"#fff",
+                border:"none",borderRadius:6,padding:isMobile?"11px 12px":"6px 10px",
+                cursor:liveSync.loading?"wait":"pointer",fontSize:11,
+                fontWeight:800,letterSpacing:"0.06em",fontFamily:"inherit",
+                textTransform:"uppercase"
+              }}>{liveSync.loading?"Syncing…":"Sync Live Scores"}</button>
+              <label style={{fontSize:10,color:C.muted,display:"flex",gap:5,alignItems:"center",cursor:"pointer"}}>
+                <input type="checkbox" checked={liveSync.auto} onChange={e=>setLiveSync(prev=>({...prev,auto:e.target.checked}))}/>
+                Auto-sync every 5 min
+              </label>
+              <div style={{fontSize:10,color:liveSync.error?C.red:C.muted,textAlign:"right",maxWidth:320,lineHeight:1.3}}>
+                {liveSync.message}
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      {/* TAB BAR */}
+      <div style={{background:C.bg, borderBottom:`1px solid ${C.border}`, padding:isMobile?"0 8px":"0 20px", display:"flex", overflowX:"auto", WebkitOverflowScrolling:"touch"}}>
+        <div style={{maxWidth:1300, margin:"0 auto", display:"flex", gap:0}}>
+          {tabBtn("wallchart","Wall Chart")}
+          {tabBtn("schedule","Schedule")}
+          {tabBtn("calendar","Calendar")}
+          {tabBtn("standings","Standings")}
+          {tabBtn("bracket","Bracket")}
+        </div>
+      </div>
+
+      {/* CONTENT */}
+      <div style={{maxWidth:1300, margin:"0 auto", padding:isMobile?"12px 8px":"16px 14px"}}>
+
+        {/* ── WALL CHART TAB ── */}
+        {tab==="wallchart"&&(
+          <div>
+            {/* Group filter pills */}
+            <div style={{display:"flex",gap:5,flexWrap:"wrap",marginBottom:14,alignItems:"center"}}>
+              <span style={{fontSize:11,color:C.muted,marginRight:4,letterSpacing:"0.06em"}}>SHOW:</span>
+              {["ALL",...groups].map(g=>(
+                <button key={g} onClick={()=>setGroupFilter(g)} style={{
+                  padding:isMobile?"8px 12px":"3px 10px", borderRadius:20,
+                  border:`1px solid ${groupFilter===g?C.gold:C.border}`,
+                  background:groupFilter===g?C.goldDim:"transparent",
+                  color:groupFilter===g?C.gold:C.muted,
+                  fontSize:11, cursor:"pointer", fontFamily:"inherit",
+                }}>{g==="ALL"?"All Groups":`Group ${g}`}</button>
+              ))}
+            </div>
+            <div style={{display:"grid",gridTemplateColumns:isMobile?"1fr":"repeat(auto-fill,minmax(600px,1fr))",gap:isMobile?12:10}}>
+              {filteredGroups.map(g=>(
+                <GroupPanel key={g} group={g} standings={allSt[g]} scores={scores} onSave={saveGroupScore}/>
+              ))}
+            </div>
+          </div>
+        )}
+
+        {/* ── SCHEDULE TAB ── */}
+        {tab==="schedule"&&(
+          <ScheduleList scores={scores} onSave={saveGroupScore}/>
+        )}
+
+        {/* ── CALENDAR TAB ── */}
+        {tab==="calendar"&&(
+          <CalendarTab scores={scores} onSave={saveGroupScore}/>
+        )}
+
+        {/* ── STANDINGS TAB ── */}
+        {tab==="standings"&&(
+          <div>
+            <div style={{fontSize:11,color:C.muted,marginBottom:12,lineHeight:1.6}}>
+              <span style={{color:C.greenBright}}>■</span> Top 2 advance automatically to Round of 32 &nbsp;
+              <span style={{color:C.amber}}>■</span> 3rd place — best 8 of 12 also advance &nbsp;
+              Tiebreaker: Pts → GD → GF → Head-to-head → Fair play
+            </div>
+            <AllStandings scores={scores}/>
+          </div>
+        )}
+
+        {/* ── BRACKET TAB ── */}
+        {tab==="bracket"&&(
+          <div>
+            <div style={{
+              background:C.card, border:`1px solid ${C.border}`,
+              borderRadius:6, padding:"8px 12px", marginBottom:14,
+              fontSize:11, color:C.muted, lineHeight:1.7,
+            }}>
+              <span style={{color:C.text,fontWeight:600}}>Live bracket prediction</span> — team slots marked with group codes (e.g. "1st A", "2nd B") automatically fill in from standings as you enter group scores.
+              Knockout scores can be entered independently. <span style={{color:C.amber}}>❓</span> = slot not yet determined.
+            </div>
+            <BracketView scores={allScores} onSave={(id,h,a)=>{
+              if(String(id).startsWith("ko_")) saveKoScore(id,h,a);
+              else saveGroupScore(id,h,a);
+            }} ko={ko}/>
+          </div>
+        )}
+
+      </div>
+    </div>
+  );
+}
+
+
+    const root = ReactDOM.createRoot(document.getElementById('root'));
+    root.render(<App />);
+  </script>
+</body>
+</html>
